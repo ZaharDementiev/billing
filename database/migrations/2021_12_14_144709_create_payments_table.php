@@ -17,9 +17,9 @@ class CreatePaymentsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->decimal('amount');
-            $table->tinyInteger('status');
+            $table->tinyInteger('status')->default(0);
             $table->unsignedBigInteger('payment_system');
-            $table->string('uuid');
+            $table->string('uuid')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

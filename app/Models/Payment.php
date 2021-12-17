@@ -11,5 +11,8 @@ class Payment extends Model
 
     protected $guarded = ['id'];
 
+    const YANDEX = 0;
+
+    const SETUP_PAYMENT_VALUE = 1;
     const PAYMENT_VALUE = 1;
 }

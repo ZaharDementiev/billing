@@ -3,59 +3,67 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use YooKassa\Model\Notification\NotificationCanceled;
-use YooKassa\Model\Notification\NotificationSucceeded;
-use YooKassa\Model\NotificationEventType;
-use YooKassa\Model\PaymentInterface;
 use YooKassa\Client;
 use YooKassa\Model\CancellationDetailsReasonCode;
 use YooKassa\Model\PaymentStatus;
 
 class PaymentController extends Controller
 {
-    public function saveYandexDetails(Request $request)
+    public function saveYandexDetails()
     {
-        $requestBody = $request->all();
-
-        $notification = ($requestBody['event'] === NotificationEventType::PAYMENT_SUCCEEDED)
-            ? new NotificationSucceeded($requestBody) : null;
-        if (!$notification) {
-            if ($requestBody['event'] === NotificationEventType::PAYMENT_CANCELED) {
-                $notification = new NotificationCanceled($requestBody);
-                if ($payment = $notification->getObject()) {
-                    if ($payment->getMetadata() && $payment->getMetadata()->notify_user_id) {
-                        Log::error('Payment Fail');
-                        abort(500);
-                    }
-                }
-            }
-            return response()->json([]);
+        if (!auth()->check()) {
+            return  redirect()->route('login');
         }
+        $payment = new Payment();
+        $payment->amount = Payment::SETUP_PAYMENT_VALUE;
+        $payment->user_id = auth()->id();
+        $payment->payment_system = Payment::YANDEX;
+        $payment->save();
 
-        $payment = $notification->getObject();
+        $desc = 'Подписка на сервис';
+        $meta = [
+            'user_id' => auth()->id(),
+            'payment_id' => $payment->id,
+        ];
 
-        if (!$payment->payment_method->saved) {
-            return response()->json([]);
+        $route = route('index');
+
+        $payment = $this->setupPayment($meta, $payment->getRawOriginal('amount'), $route, $desc);
+
+        return redirect()->to($payment->getConfirmation()->getConfirmationUrl());
+    }
+
+    private function setupPayment(array $meta, $amount, $route, $desc = 'Привязка карты к сервису')
+    {
+        $client = new Client();
+        $meta['notify_user_id'] = auth()->id();
+        try {
+            return $client->createPayment(
+                array(
+                    'amount' => array(
+                        'value' => $amount,
+                        'currency' => 'RUB',
+                    ),
+                    'payment_method_data' => array(
+                        'type' => Payment::YANDEX,
+                    ),
+                    'confirmation' => array(
+                        'type' => 'redirect',
+                        'return_url' => $route,
+                    ),
+                    'description' => $desc,
+                    'capture' => true,
+                    'save_payment_method' => true,
+                    'metadata' => $meta
+                ),
+                uniqid('', true)
+            );
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return false;
         }
-
-        $metadata = $request->metadata ?? null;
-        if (!$metadata) {
-            return response()->json([]);
-        }
-        $user = User::find($request->metadata->user_id);
-        if (!$user) {
-            Log::error('no user id');
-            abort(500);
-        }
-
-        $user->card_token = $request->payment_method->getId();
-        $user->save();
-
-        return response()->json([]);
     }
 
     public function chargeFollow()
