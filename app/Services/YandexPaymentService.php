@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendEmailJob;
 use App\Models\Email;
 use App\Models\Payment;
 use Carbon\Carbon;
@@ -51,6 +52,7 @@ class YandexPaymentService implements ChargableService
         if ($id = $payment->getMetadata()->user_id) {
             $user = \App\Models\User::findOrFail($id);
             $user->card_token = $payment->payment_method->getId();
+            $user->active_follower = true;
             $user->save();
         }
 
@@ -85,12 +87,10 @@ class YandexPaymentService implements ChargableService
             }
             if ($response->getStatus() === PaymentStatus::CANCELED &&
                 $response->cancellation_details->getReason() == CancellationDetailsReasonCode::PERMISSION_REVOKED) {
-                return;
+                return null;
             }
             if ($response->getStatus() === PaymentStatus::SUCCEEDED) {
                 $success = true;
-                Log::info('SUCCESS is ' . $success);
-
                 $payment = new Payment();
                 $payment->amount = Payment::PAYMENT_VALUE;
                 $payment->user_id = $user->id;
@@ -98,16 +98,24 @@ class YandexPaymentService implements ChargableService
                 $payment->uuid = $response->id;
                 $payment->save();
 
+                $user->week++;
                 $user->next_payment_at = Carbon::now()->addDays(Email::NEXT_SENT_DAYS);
+                $user->active_follower = true;
                 $user->save();
-
-                return;
             }
         } catch (\Exception $e) {
             echo $e->getMessage()."\n";
             Log::error($e->getMessage());
-            return;
+            return null;
         }
+
+        if (!$success) {
+            $user->active_follower = false;
+            $user->save();
+            return null;
+        }
+
+        return true;
     }
 
     public function setup(bool $authCheck, $user)

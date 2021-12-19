@@ -11,7 +11,7 @@ class PaymentController extends Controller
 
     public function __construct()
     {
-        $this->service = PaymentSystemFactory::all()[env('PAYMENT_SYSTEM')];
+        $this->service = PaymentSystemFactory::all()[config('packages.payment_system')];
     }
 
     public function setPayments()

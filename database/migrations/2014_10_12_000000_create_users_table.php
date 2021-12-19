@@ -19,6 +19,7 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->integer('week')->default(0);
             $table->string('card_token')->nullable();
             $table->boolean('active_follower')->default(0);
             $table->timestamp('next_payment_at')->nullable();
