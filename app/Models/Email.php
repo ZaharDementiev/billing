@@ -10,4 +10,6 @@ class Email extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
+
+    const NEXT_SENT_DAYS = 10;
 }

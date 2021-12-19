@@ -19,8 +19,8 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('card_token');
-            $table->boolean('active_follower');
+            $table->string('card_token')->nullable();
+            $table->boolean('active_follower')->default(0);
             $table->timestamp('next_payment_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
