@@ -1,5 +1,6 @@
 <?php
 
+use App\Factories\PaymentSystemFactory;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -8,7 +9,11 @@ Route::get('/', function () {
 
 Route::get('save', 'App\Http\Controllers\PaymentController@setPayments')->name('saveyandex');
 Route::post('notification', 'App\Http\Controllers\PaymentController@paymentNotification')->name('notificationyandex');
+Route::get('charge', function () {
+    $service = PaymentSystemFactory::all()[config('packages.payment_system')];
+    $service->charge(\App\Models\User::find(1));
+});
 
-Route::post('register', 'App\Http\Controllers\AuthController@register')->name('register');
-Route::post('login', 'App\Http\Controllers\AuthController@login')->name('login');
-Route::get('logout', 'App\Http\Controllers\AuthController@logout')->name('logout');
+//Route::post('register', 'App\Http\Controllers\AuthController@register')->name('register');
+//Route::post('login', 'App\Http\Controllers\AuthController@login')->name('login');
+//Route::get('logout', 'App\Http\Controllers\AuthController@logout')->name('logout');

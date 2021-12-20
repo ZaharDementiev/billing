@@ -45,6 +45,15 @@
                     </svg>
                 </div>
 
+                <form id="paymentFormSample" autocomplete="off">
+                    <input type="text" data-cp="cardNumber" style="border: solid">
+                    <input type="text" data-cp="expDateMonth" style="border: solid">
+                    <input type="text" data-cp="expDateYear" style="border: solid">
+                    <input type="text" data-cp="cvv" style="border: solid">
+                    <input type="text" data-cp="name" style="border: solid">
+                    <button type="submit">Оплатить 100 р.</button>
+                </form>
+
                 <div class="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
                     <div class="grid grid-cols-1 md:grid-cols-2">
                         <div class="p-6">
@@ -129,4 +138,18 @@
             </div>
         </div>
     </body>
+    <script src="https://checkout.cloudpayments.ru/checkout.js"></script>
+    <script>
+        const checkout = new cp.Checkout({
+            publicId: 'pk_09d95bbb21704af9a2d891daf0933',
+            container: document.getElementById("paymentFormSample")
+        });
+
+        checkout.createPaymentCryptogram()
+            .then((cryptogram) => {
+                console.log(cryptogram); // криптограмма
+            }).catch((errors) => {
+            console.log(errors)
+        });
+    </script>
 </html>

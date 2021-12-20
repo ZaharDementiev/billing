@@ -13,6 +13,7 @@
         "laravel/framework": "^8.65",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
+        "troytft/cloud-payments-client": "^0.1.0",
         "yoomoney/yookassa-sdk-php": "^2.2",
         "ziming/json-field-for-backpack": "^1.1"
     },

@@ -13,6 +13,7 @@ class Payment extends Model
     protected $guarded = ['id'];
 
     const YANDEX = 0;
+    const CLOUD = 1;
 
     public const PAID = 0;
     public const WAITING = 1;
