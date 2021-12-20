@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Jobs\SendEmailJob;
 use App\Models\Email;
 use App\Models\Payment;
+use App\Models\User;
 use Carbon\Carbon;
-use http\Client\Curl\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use YooKassa\Client;
 use YooKassa\Model\CancellationDetailsReasonCode;
@@ -22,7 +22,9 @@ class YandexPaymentService implements ChargableService
     public function __construct()
     {
         $this->client = new Client();
-        $this->client->setAuth(config('packages.yandex_kassa_id'), config('packages.yandex_kassa_secret'));
+        $kassaId = DB::table('settings')->where('name', 'shop_id')->first()->value;
+        $key = DB::table('settings')->where('name', 'secret_key')->first()->value;
+        $this->client->setAuth($kassaId, $key);
     }
 
     public function notify(array $request)
@@ -50,7 +52,7 @@ class YandexPaymentService implements ChargableService
         }
 
         if ($id = $payment->getMetadata()->user_id) {
-            $user = \App\Models\User::findOrFail($id);
+            $user = User::findOrFail($id);
             $user->card_token = $payment->payment_method->getId();
             $user->active_follower = true;
             $user->save();
@@ -62,12 +64,13 @@ class YandexPaymentService implements ChargableService
     public function charge($user)
     {
         $success = false;
+        $amount = DB::table('settings')->where('name', 'payment_amount')->first()->value;
 
         try {
             $response = $this->client->createPayment(
                 array(
                     'amount' => array(
-                        'value' => Payment::PAYMENT_VALUE,
+                        'value' => (int) $amount,
                         'currency' => 'RUB',
                     ),
                     'payment_method_id' => $user->card_token,
@@ -76,6 +79,11 @@ class YandexPaymentService implements ChargableService
                 ),
                 uniqid('', true)
             );
+            $payment = new Payment();
+            $payment->amount = (int) $amount;
+            $payment->user_id = $user->id;
+            $payment->payment_system = Payment::YANDEX;
+            $payment->uuid = $response->id;
             if ($response->getStatus() === PaymentStatus::WAITING_FOR_CAPTURE) {
                 $response = $this->client->capturePayment(
                     array(
@@ -87,19 +95,17 @@ class YandexPaymentService implements ChargableService
             }
             if ($response->getStatus() === PaymentStatus::CANCELED &&
                 $response->cancellation_details->getReason() == CancellationDetailsReasonCode::PERMISSION_REVOKED) {
-                return null;
+                $payment->status = Payment::REJECTED;
+                $success = false;
             }
             if ($response->getStatus() === PaymentStatus::SUCCEEDED) {
                 $success = true;
-                $payment = new Payment();
-                $payment->amount = Payment::PAYMENT_VALUE;
-                $payment->user_id = $user->id;
-                $payment->payment_system = Payment::YANDEX;
-                $payment->uuid = $response->id;
+
                 $payment->save();
 
                 $user->week++;
-                $user->next_payment_at = Carbon::now()->addDays(Email::NEXT_SENT_DAYS);
+                $days = DB::table('settings')->where('name', 'next_send_days')->first()->value;
+                $user->next_payment_at = Carbon::now()->addDays((int) $days);
                 $user->active_follower = true;
                 $user->save();
             }
@@ -125,7 +131,8 @@ class YandexPaymentService implements ChargableService
         }
 
         $payment = new Payment();
-        $payment->amount = Payment::SETUP_PAYMENT_VALUE;
+        $amount = DB::table('settings')->where('name', 'setup_payment_amount')->first()->value;
+        $payment->amount = (int) $amount;
         $payment->user_id = $user->id;
         $payment->payment_system = Payment::YANDEX;
         $payment->save();

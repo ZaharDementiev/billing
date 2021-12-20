@@ -11,4 +11,4 @@ Route::post('notification', 'App\Http\Controllers\PaymentController@paymentNotif
 
 Route::post('register', 'App\Http\Controllers\AuthController@register')->name('register');
 Route::post('login', 'App\Http\Controllers\AuthController@login')->name('login');
-Route::post('logout', 'App\Http\Controllers\AuthController@logout')->name('logout');
+Route::get('logout', 'App\Http\Controllers\AuthController@logout')->name('logout');

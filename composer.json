@@ -6,15 +6,18 @@
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
+        "backpack/crud": "4.1.*",
+        "backpack/permissionmanager": "^6.0",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.65",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
         "yoomoney/yookassa-sdk-php": "^2.2",
-      "ext-http": "*"
+        "ziming/json-field-for-backpack": "^1.1"
     },
     "require-dev": {
+        "backpack/generators": "^3.1",
         "facade/ignition": "^2.5",
         "fakerphp/faker": "^1.9.1",
         "laravel/sail": "^1.0.1",
