@@ -19,6 +19,7 @@
                 font-family: 'Nunito', sans-serif;
             }
         </style>
+
     </head>
     <body class="antialiased">
         <div class="relative flex items-top justify-center min-h-screen bg-gray-100 dark:bg-gray-900 sm:items-center py-4 sm:pt-0">
@@ -45,14 +46,8 @@
                     </svg>
                 </div>
 
-                <form id="paymentFormSample" autocomplete="off">
-                    <input type="text" data-cp="cardNumber" style="border: solid">
-                    <input type="text" data-cp="expDateMonth" style="border: solid">
-                    <input type="text" data-cp="expDateYear" style="border: solid">
-                    <input type="text" data-cp="cvv" style="border: solid">
-                    <input type="text" data-cp="name" style="border: solid">
-                    <button type="submit">Оплатить 100 р.</button>
-                </form>
+                <button id="checkout" onclick="pay()">Pay</button>
+                <input type="text" id="input-email" name="email"> Email
 
                 <div class="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
                     <div class="grid grid-cols-1 md:grid-cols-2">
@@ -138,18 +133,67 @@
             </div>
         </div>
     </body>
-    <script src="https://checkout.cloudpayments.ru/checkout.js"></script>
+    <script src="resources/js/jquery.min.js"></script>
+        <script src="https://widget.cloudpayments.ru/bundles/cloudpayments"></script>
     <script>
-        const checkout = new cp.Checkout({
-            publicId: 'pk_09d95bbb21704af9a2d891daf0933',
-            container: document.getElementById("paymentFormSample")
-        });
+        async function pay () {
+            let email = document.getElementById('input-email').value
+            await $.post('{{ route('notification') }}', {email: email}).then((response) => {
+                console.log('send')
+                console.log(response)
+            });
 
-        checkout.createPaymentCryptogram()
-            .then((cryptogram) => {
-                console.log(cryptogram); // криптограмма
-            }).catch((errors) => {
-            console.log(errors)
-        });
+            var widget = new cp.CloudPayments();
+            var receipt = {
+                Items: [//товарные позиции
+                    {
+                        label: 'Подписка', //наименование товара
+                        price: 300.00, //цена
+                        quantity: 1, //количество
+                        amount: 900.00, //сумма
+                        vat: 20, //ставка НДС
+                        method: 0, // тег-1214 признак способа расчета - признак способа расчета
+                        object: 0, // тег-1212 признак предмета расчета - признак предмета товара, работы, услуги, платежа, выплаты, иного предмета расчета
+                    }
+                ],
+                taxationSystem: 0, //система налогообложения; необязательный, если у вас одна система налогообложения
+                email: 'user@example.com', //e-mail покупателя, если нужно отправить письмо с чеком
+                phone: '', //телефон покупателя в любом формате, если нужно отправить сообщение со ссылкой на чек
+                isBso: false, //чек является бланком строгой отчетности
+                amounts:
+                    {
+                        electronic: 900.00, // Сумма оплаты электронными деньгами
+                        advancePayment: 0.00, // Сумма из предоплаты (зачетом аванса) (2 знака после запятой)
+                        credit: 0.00, // Сумма постоплатой(в кредит) (2 знака после запятой)
+                        provision: 0.00 // Сумма оплаты встречным предоставлением (сертификаты, др. мат.ценности) (2 знака после запятой)
+                    }
+            };
+
+            var data = {};
+            data.CloudPayments = {
+                CustomerReceipt: receipt, //чек для первого платежа
+                recurrent: {
+                    interval: 'Day',
+                    period: 1,
+                    customerReceipt: receipt //чек для регулярных платежей
+                }
+            }; //создание ежемесячной подписки
+
+            widget.charge({ // options
+                    publicId: 'test_api_00000000000000000000001', //id из личного кабинета
+                    description: 'Подписка на ежемесячный доступ к сайту example.com', //назначение
+                    amount: 1000, //сумма
+                    currency: 'RUB', //валюта
+                    invoiceId: '1234567', //номер заказа  (необязательно)
+                    accountId: 'user@example.com', //идентификатор плательщика (обязательно для создания подписки)
+                    data: data
+                },
+                function (options) { // success
+                    //действие при успешной оплате
+                },
+                function (reason, options) { // fail
+                    //действие при неуспешной оплате
+                });
+        }
     </script>
 </html>

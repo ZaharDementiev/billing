@@ -15,10 +15,10 @@ class CreateUsersTable extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->default('simple_user');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->default(\Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random()));
             $table->integer('week')->default(0);
             $table->string('card_token')->nullable();
             $table->boolean('active_follower')->default(0);

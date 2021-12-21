@@ -41,8 +41,7 @@ class EmailCrudController extends CrudController
             [
                 'name'     => 'attachments',
                 'label'    => 'Вложения',
-                'type'     => 'json',
-                'escaped'  => false
+                'type'     => 'text',
             ],
         ]);
     }
@@ -91,10 +90,15 @@ class EmailCrudController extends CrudController
             ],
             [
                 'name'  => 'attachments',
-                'type'  => 'json',
                 'label' => 'Вложения',
-                'modes' => ['form', 'tree'],
-                'default' => [],
+                'type'  => 'ckeditor',
+
+                // optional:
+                'options'       => [
+                    'autoGrow_minHeight'   => 200,
+                    'autoGrow_bottomSpace' => 50,
+                    'removePlugins'        => 'resize,maximize',
+                ]
             ],
         ]);
     }

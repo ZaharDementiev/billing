@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use \CloudPayments\Manager;
 use Illuminate\Support\Facades\Request;
@@ -26,9 +27,14 @@ class CloudPaymentService implements ChargableService
 
     public function setup(bool $authCheck, $user)
     {
-        if (!$authCheck) {
-            return  redirect()->route('login');
-        }
+
+    }
+
+    public function notify(array $request)
+    {
+        $user = new User();
+        $user->email = $request['email'];
+        $user->save();
 
         $payment = new Payment();
         $amount = DB::table('settings')->where('name', 'setup_payment_amount')->first()->value;
@@ -37,17 +43,10 @@ class CloudPaymentService implements ChargableService
         $payment->payment_system = Payment::CLOUD;
         $payment->save();
 
-        $data = [
-            'Amount'                => $amount,
-            'Currency'              => 'RUB',
-            'IpAddress'             => Request::ip(),
-            'Name'                  => $user->name,
-            'CardCryptogramPacket'  => ''
+        return [
+            'amount'    => $payment->amount,
+            'email'     => $user->email,
+            'days'      => (int) DB::table('settings')->where('name', 'next_send_days')->first()->value,
         ];
-    }
-
-    public function notify(array $request)
-    {
-        // TODO: Implement notify() method.
     }
 }

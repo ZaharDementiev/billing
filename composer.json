@@ -7,6 +7,7 @@
     "require": {
         "php": "^7.3|^8.0",
         "backpack/crud": "4.1.*",
+        "backpack/filemanager": "^1.1",
         "backpack/permissionmanager": "^6.0",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
@@ -14,8 +15,7 @@
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
         "troytft/cloud-payments-client": "^0.1.0",
-        "yoomoney/yookassa-sdk-php": "^2.2",
-        "ziming/json-field-for-backpack": "^1.1"
+        "yoomoney/yookassa-sdk-php": "^2.2"
     },
     "require-dev": {
         "backpack/generators": "^3.1",

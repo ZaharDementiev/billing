@@ -17,7 +17,7 @@ class CreateEmailsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('week');
             $table->string('subject');
-            $table->json('attachments');
+            $table->text('attachments');
         });
     }
 

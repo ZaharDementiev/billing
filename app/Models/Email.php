@@ -11,6 +11,5 @@ class Email extends Model
     use HasFactory, CrudTrait;
 
     protected $guarded = ['id'];
-    protected $casts = ['attachments'  => 'array'];
     public $timestamps = false;
 }
