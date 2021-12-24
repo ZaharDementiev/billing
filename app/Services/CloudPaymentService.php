@@ -25,15 +25,16 @@ class CloudPaymentService implements ChargableService
         // TODO: Implement charge() method.
     }
 
-    public function setup(bool $authCheck, $user)
+    public function setup(string $email)
     {
+        if (User::where('email', $email)->exists()) {
+            return [
+                'error' => true
+            ];
+        }
 
-    }
-
-    public function notify(array $request)
-    {
         $user = new User();
-        $user->email = $request['email'];
+        $user->email = $email;
         $user->save();
 
         $payment = new Payment();
@@ -44,9 +45,17 @@ class CloudPaymentService implements ChargableService
         $payment->save();
 
         return [
-            'amount'    => $payment->amount,
-            'email'     => $user->email,
-            'days'      => (int) DB::table('settings')->where('name', 'next_send_days')->first()->value,
+            'error'         => false,
+            'amount'        => $payment->amount,
+            'email'         => $user->email,
+            'days'          => (int) DB::table('settings')->where('name', 'next_send_days')->first()->value,
+            'payment_id'    => $payment->id,
+            'key'           => DB::table('settings')->where('name', 'shop_id')->first()->value
         ];
+    }
+
+    public function notify(array $request)
+    {
+
     }
 }

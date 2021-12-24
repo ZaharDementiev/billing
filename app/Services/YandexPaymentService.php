@@ -124,23 +124,19 @@ class YandexPaymentService implements ChargableService
         return true;
     }
 
-    public function setup(bool $authCheck, $user)
+    public function setup(string $email)
     {
-        if (!$authCheck) {
-            return  redirect()->route('login');
-        }
-
         $payment = new Payment();
         $amount = DB::table('settings')->where('name', 'setup_payment_amount')->first()->value;
         $payment->amount = (int) $amount;
-        $payment->user_id = $user->id;
+//        $payment->user_id = $user->id;
         $payment->payment_system = Payment::YANDEX;
         $payment->save();
 
         $desc = 'Подписка на сервис';
         $meta = [
-            'user_id' => $user->id,
-            'payment_id' => $payment->id,
+//            'user_id' => $user->id,
+//            'payment_id' => $payment->id,
         ];
 
         $route = route('index');

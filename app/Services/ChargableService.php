@@ -6,7 +6,7 @@ interface ChargableService
 {
     public function charge($user);
 
-    public function setup(bool $authCheck, $user);
+    public function setup(string $email);
 
     public function notify(array $request);
 }

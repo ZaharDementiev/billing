@@ -19,6 +19,7 @@
                 font-family: 'Nunito', sans-serif;
             }
         </style>
+        <meta name="csrf-token" content="{{ csrf_token() }}" />
 
     </head>
     <body class="antialiased">
@@ -133,67 +134,76 @@
             </div>
         </div>
     </body>
-    <script src="resources/js/jquery.min.js"></script>
+    <script src="/jquery.min.js"></script>
         <script src="https://widget.cloudpayments.ru/bundles/cloudpayments"></script>
-    <script>
+    <script type="text/javascript">
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
         async function pay () {
             let email = document.getElementById('input-email').value
-            await $.post('{{ route('notification') }}', {email: email}).then((response) => {
-                console.log('send')
-                console.log(response)
-            });
+            await $.get('{{ route('save') }}?email=' + email).then((response) => {
+                if (response.error) {
+                    alert('Email already exists')
+                } else {
+                    var widget = new cp.CloudPayments();
+                    var receipt = {
+                        Items: [//товарные позиции
+                            {
+                                label: 'Подписка', //наименование товара
+                                price: response.amount, //цена
+                                quantity: 1, //количество
+                                amount: response.amount, //сумма
+                                vat: 0, //ставка НДС
+                                method: 0, // тег-1214 признак способа расчета - признак способа расчета
+                                object: 0, // тег-1212 признак предмета расчета - признак предмета товара, работы, услуги, платежа, выплаты, иного предмета расчета
+                            }
+                        ],
+                        taxationSystem: 0, //система налогообложения; необязательный, если у вас одна система налогообложения
+                        email: response.email, //e-mail покупателя, если нужно отправить письмо с чеком
+                        phone: '', //телефон покупателя в любом формате, если нужно отправить сообщение со ссылкой на чек
+                        isBso: false, //чек является бланком строгой отчетности
+                        amounts:
+                            {
+                                electronic: response.amount, // Сумма оплаты электронными деньгами
+                                advancePayment: 0.00, // Сумма из предоплаты (зачетом аванса) (2 знака после запятой)
+                                credit: 0.00, // Сумма постоплатой(в кредит) (2 знака после запятой)
+                                provision: 0.00 // Сумма оплаты встречным предоставлением (сертификаты, др. мат.ценности) (2 знака после запятой)
+                            }
+                    };
 
-            var widget = new cp.CloudPayments();
-            var receipt = {
-                Items: [//товарные позиции
-                    {
-                        label: 'Подписка', //наименование товара
-                        price: 300.00, //цена
-                        quantity: 1, //количество
-                        amount: 900.00, //сумма
-                        vat: 20, //ставка НДС
-                        method: 0, // тег-1214 признак способа расчета - признак способа расчета
-                        object: 0, // тег-1212 признак предмета расчета - признак предмета товара, работы, услуги, платежа, выплаты, иного предмета расчета
-                    }
-                ],
-                taxationSystem: 0, //система налогообложения; необязательный, если у вас одна система налогообложения
-                email: 'user@example.com', //e-mail покупателя, если нужно отправить письмо с чеком
-                phone: '', //телефон покупателя в любом формате, если нужно отправить сообщение со ссылкой на чек
-                isBso: false, //чек является бланком строгой отчетности
-                amounts:
-                    {
-                        electronic: 900.00, // Сумма оплаты электронными деньгами
-                        advancePayment: 0.00, // Сумма из предоплаты (зачетом аванса) (2 знака после запятой)
-                        credit: 0.00, // Сумма постоплатой(в кредит) (2 знака после запятой)
-                        provision: 0.00 // Сумма оплаты встречным предоставлением (сертификаты, др. мат.ценности) (2 знака после запятой)
-                    }
-            };
+                    var data = {};
+                    data.CloudPayments = {
+                        CustomerReceipt: receipt, //чек для первого платежа
+                        recurrent: {
+                            interval: 'Day',
+                            period: response.days,
+                            customerReceipt: receipt //чек для регулярных платежей
+                        }
+                    }; //создание ежемесячной подписки
 
-            var data = {};
-            data.CloudPayments = {
-                CustomerReceipt: receipt, //чек для первого платежа
-                recurrent: {
-                    interval: 'Day',
-                    period: 1,
-                    customerReceipt: receipt //чек для регулярных платежей
+                    widget.charge({ // options
+                            publicId: response.key, //id из личного кабинета
+                            description: 'Подписка на ежемесячный доступ к сайту', //назначение
+                            amount: response.amount, //сумма
+                            currency: 'RUB', //валюта
+                            invoiceId: response.payment_id, //номер заказа  (необязательно)
+                            accountId: response.email, //идентификатор плательщика (обязательно для создания подписки)
+                            data: data
+                        },
+                        function (options) { // success
+                            $.post('{{ route('sendMail') }}', {email: email, week: 1}).then((response) => {
+                                console.log('start')
+                            });
+                        },
+                        function (reason, options) { // fail
+                            $.get('{{ route('dropUser') }}?email=' + email)
+                        });
                 }
-            }; //создание ежемесячной подписки
-
-            widget.charge({ // options
-                    publicId: 'test_api_00000000000000000000001', //id из личного кабинета
-                    description: 'Подписка на ежемесячный доступ к сайту example.com', //назначение
-                    amount: 1000, //сумма
-                    currency: 'RUB', //валюта
-                    invoiceId: '1234567', //номер заказа  (необязательно)
-                    accountId: 'user@example.com', //идентификатор плательщика (обязательно для создания подписки)
-                    data: data
-                },
-                function (options) { // success
-                    //действие при успешной оплате
-                },
-                function (reason, options) { // fail
-                    //действие при неуспешной оплате
-                });
+            });
         }
     </script>
 </html>

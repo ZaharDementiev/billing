@@ -3,6 +3,7 @@
 namespace App\Factories;
 
 use App\Models\Payment;
+use App\Services\CloudPaymentService;
 use App\Services\YandexPaymentService;
 
 class PaymentSystemFactory
@@ -11,6 +12,7 @@ class PaymentSystemFactory
     {
         return [
             Payment::YANDEX => new YandexPaymentService(),
+            Payment::CLOUD  => new CloudPaymentService(),
         ];
     }
 }
